@@ -328,6 +328,13 @@ function frame() {
     speedShown = kmh;
   }
 
+  // the fur shader perturbs normals in object space; give it the basis
+  const fur = horse.furUniforms;
+  if (fur) {
+    const e = camera.matrixWorldInverse.elements;
+    fur.uViewRot.value.set(e[0], e[4], e[8], e[1], e[5], e[9], e[2], e[6], e[10]);
+  }
+
   skeleton.update();
   controls.update();
   sky.position.copy(camera.position);

@@ -34,6 +34,8 @@ export class Horse {
   readonly lids: THREE.Mesh[] = [];
   private lidMat!: THREE.MeshStandardMaterial;
   readonly stats: { vertices: number; triangles: number; buildMs: number };
+  /** uniforms of the fur shader, refreshed each frame with the camera basis */
+  furUniforms: { uFurStrength: { value: number }; uFurDark: { value: number }; uViewRot: { value: THREE.Matrix3 } } | null = null;
 
   coat: Coat = COATS[0];
   private bodyData!: MeshData;
@@ -93,13 +95,101 @@ export class Horse {
 
     const mat = new THREE.MeshPhysicalMaterial({
       vertexColors: true,
-      roughness: 0.78,
+      roughness: 0.66,
       metalness: 0,
       // coat sheen: the soft, slightly directional highlight horsehair has
-      sheen: 0.22,
+      sheen: 0.3,
       sheenRoughness: 0.75,
       sheenColor: new THREE.Color("#d9c3a4"),
     });
+
+    // ---- procedural fur -------------------------------------------------
+    // No textures: a 3D value-noise height field, stretched along the fall
+    // line so it forms strands, turned into a normal perturbation and a
+    // little colour break-up.
+    const furUniforms = {
+      uFurStrength: { value: 0.36 },
+      uFurDark: { value: 0.1 },
+      uViewRot: { value: new THREE.Matrix3() },
+    };
+    this.furUniforms = furUniforms;
+    mat.onBeforeCompile = (shader) => {
+      Object.assign(shader.uniforms, furUniforms);
+      shader.vertexShader = shader.vertexShader
+        .replace(
+          "#include <common>",
+          `#include <common>
+           varying vec3 vFurPos;`,
+        )
+        .replace(
+          "#include <skinning_vertex>",
+          `#include <skinning_vertex>
+           vFurPos = transformed;`,
+        );
+
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          "#include <common>",
+          `#include <common>
+           varying vec3 vFurPos;
+           uniform float uFurStrength;
+           uniform float uFurDark;
+           uniform mat3 uViewRot;
+
+           float furHash(vec3 p3) {
+             p3 = fract(p3 * 0.1031);
+             p3 += dot(p3, p3.zyx + 31.32);
+             return fract((p3.x + p3.y) * p3.z);
+           }
+           float furNoise(vec3 x) {
+             vec3 i = floor(x);
+             vec3 f = fract(x);
+             f = f * f * (3.0 - 2.0 * f);
+             return mix(
+               mix(mix(furHash(i), furHash(i + vec3(1,0,0)), f.x),
+                   mix(furHash(i + vec3(0,1,0)), furHash(i + vec3(1,1,0)), f.x), f.y),
+               mix(mix(furHash(i + vec3(0,0,1)), furHash(i + vec3(1,0,1)), f.x),
+                   mix(furHash(i + vec3(0,1,1)), furHash(i + vec3(1,1,1)), f.x), f.y),
+               f.z);
+           }
+           // hair runs down the body: stretch the field hard in Y so the
+           // noise reads as strands, and let a slow mask break it into clumps
+           float furField(vec3 p) {
+             vec3 q = p * vec3(64.0, 18.0, 64.0);
+             float strands = furNoise(q) * 0.62 + furNoise(q * 2.6) * 0.28
+                           + furNoise(q * 6.3) * 0.1;
+             float clump = furNoise(p * vec3(9.0, 3.0, 9.0));
+             return mix(strands, 1.0 - strands, smoothstep(0.35, 0.65, clump) * 0.5);
+           }
+           vec3 furGradient(vec3 p) {
+             const float e = 0.0022;
+             float b = furField(p);
+             return vec3(furField(p + vec3(e,0,0)) - b,
+                         furField(p + vec3(0,e,0)) - b,
+                         furField(p + vec3(0,0,e)) - b) / e;
+           }`,
+        )
+        .replace(
+          "#include <normal_fragment_begin>",
+          `#include <normal_fragment_begin>
+           {
+             vec3 g = furGradient(vFurPos);
+             g = g / (1.0 + length(g) * 0.9);
+             vec3 gv = uViewRot * g;
+             gv -= dot(gv, normal) * normal;
+             normal = normalize(normal - gv * uFurStrength);
+           }`,
+        )
+        .replace(
+          "#include <color_fragment>",
+          `#include <color_fragment>
+           {
+             float f = furField(vFurPos);
+             diffuseColor.rgb *= 1.0 + (f - 0.5) * uFurDark * 2.0;
+           }`,
+        );
+    };
+    mat.customProgramCacheKey = () => "horse-fur";
 
     this.body = new THREE.SkinnedMesh(geo, mat);
     this.body.castShadow = true;
