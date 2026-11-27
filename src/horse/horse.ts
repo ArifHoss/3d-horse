@@ -31,6 +31,8 @@ export class Horse {
   readonly mane: THREE.SkinnedMesh;
   readonly tail: THREE.SkinnedMesh;
   readonly eyes: THREE.Mesh[] = [];
+  readonly lids: THREE.Mesh[] = [];
+  private lidMat!: THREE.MeshStandardMaterial;
   readonly stats: { vertices: number; triangles: number; buildMs: number };
 
   coat: Coat = COATS[0];
@@ -148,17 +150,17 @@ export class Horse {
     for (const side of [1, -1]) {
       const dir = new THREE.Vector3(0, 0, side);
       // nostrils sit high on the muzzle, not down by the jaw
-      const p = surfacePoint(new THREE.Vector3(1.326, 1.553, 0), dir, 0.002);
+      const p = surfacePoint(new THREE.Vector3(1.298, 1.559, 0), dir, 0.002);
       const n = new THREE.Mesh(nostrilGeo, darkMat);
-      n.scale.set(0.036, 0.05, 0.018);
+      n.scale.set(0.017, 0.05, 0.014);
       // sit just proud of the skin so it reads from any angle
       n.position.set(p.x - headRest[0], p.y - headRest[1], (p.z + 0.002 * side) - headRest[2]);
-      n.rotation.z = -0.35;
+      n.rotation.z = -0.62;
       headBone.add(n);
     }
     // the lip line runs across the front of the muzzle
     const mouthDir = new THREE.Vector3(-0.788, -0.6157, 0);
-    const mp = surfacePoint(new THREE.Vector3(1.30, 1.47, 0), mouthDir, 0.002);
+    const mp = surfacePoint(new THREE.Vector3(1.286, 1.487, 0), mouthDir, 0.002);
     const mouth = new THREE.Mesh(new THREE.CapsuleGeometry(0.013, 0.07, 8, 14), darkMat);
     mouth.rotation.x = Math.PI / 2;
     mouth.scale.set(1, 1, 0.7);
@@ -169,21 +171,52 @@ export class Horse {
     );
     headBone.add(mouth);
 
+    // eyes: a glossy amber ball with a black pupil, a wet highlight and a
+    // coat-coloured lid rim — a bare black bead reads as a hole
     const eyeMat = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0x140d09),
-      roughness: 0.08,
+      color: new THREE.Color(0x2a1409),
+      roughness: 0.22,
       metalness: 0.0,
       clearcoat: 1,
-      clearcoatRoughness: 0.03,
+      clearcoatRoughness: 0.02,
+      sheen: 0.4,
+      sheenColor: new THREE.Color("#6b3f1e"),
+    });
+    this.lidMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(this.coat.points),
+      roughness: 0.85,
+      metalness: 0,
+    });
+    const pupilMat = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color(0x050303),
+      roughness: 0.15,
+      clearcoat: 1,
+      clearcoatRoughness: 0.02,
     });
     const glintMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const eyeR = 0.033;
     for (const side of [1, -1]) {
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.042, 24, 18), eyeMat);
-      eye.position.set(1.097 - headRest[0], 1.849 - headRest[1], 0.084 * side);
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(eyeR, 28, 20), eyeMat);
+      eye.position.set(1.097 - headRest[0], 1.844 - headRest[1], 0.082 * side);
       headBone.add(eye);
-      const glint = new THREE.Mesh(new THREE.SphereGeometry(0.0085, 10, 8), glintMat);
-      glint.position.set(0.026, 0.019, 0.028 * side);
+
+      const pupil = new THREE.Mesh(new THREE.SphereGeometry(eyeR * 0.52, 18, 14), pupilMat);
+      pupil.position.set(0.008, 0.002, 0.016 * side);
+      pupil.scale.set(1, 1.25, 0.6);
+      eye.add(pupil);
+
+      const glint = new THREE.Mesh(new THREE.SphereGeometry(0.0062, 10, 8), glintMat);
+      glint.position.set(0.019, 0.016, 0.021 * side);
       eye.add(glint);
+
+      // lid rim, sitting in the socket around the ball
+      const lid = new THREE.Mesh(new THREE.TorusGeometry(eyeR * 1.06, 0.0095, 10, 28), this.lidMat);
+      lid.position.copy(eye.position);
+      lid.position.z -= 0.006 * side;
+      lid.rotation.set(0, 0, 0.18 * side);
+      headBone.add(lid);
+      this.lids.push(lid);
+
       this.eyes.push(eye);
     }
 
@@ -239,6 +272,7 @@ export class Horse {
     };
     recolor(this.mane, this.maneData, 3);
     recolor(this.tail, this.tailData, 9);
+    this.lidMat?.color.set(this.coat.points);
   }
 
   setGait(name: GaitName) {

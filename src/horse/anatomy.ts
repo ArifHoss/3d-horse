@@ -142,11 +142,11 @@ function trunkPrims(): Prim[] {
 
 const NECK_ANGLE = 0.66;
 const NECK: Section[] = [
-  sec(0.27, 1.60, 1.25, 0.172, NECK_ANGLE),
-  sec(0.49, 1.72, 1.37, 0.157, NECK_ANGLE),
-  sec(0.67, 1.835, 1.50, 0.147, NECK_ANGLE),
-  sec(0.83, 1.928, 1.655, 0.126, NECK_ANGLE),
-  sec(0.94, 1.978, 1.775, 0.101, NECK_ANGLE),
+  sec(0.27, 1.60, 1.25, 0.182, NECK_ANGLE),
+  sec(0.49, 1.72, 1.37, 0.172, NECK_ANGLE),
+  sec(0.67, 1.835, 1.50, 0.158, NECK_ANGLE),
+  sec(0.83, 1.928, 1.655, 0.138, NECK_ANGLE),
+  sec(0.94, 1.978, 1.775, 0.112, NECK_ANGLE),
 ];
 
 function neckPrims(): Prim[] {
@@ -174,11 +174,11 @@ function headPrims(): Prim[] {
   const out: Prim[] = [];
   // sections along the face axis: along, halfThickness, halfWidth, blend
   const face: Array<[number, number, number, number]> = [
-    [0.0, 0.088, 0.092, 0.09], // poll
-    [0.16, 0.112, 0.098, 0.10], // brow
-    [0.33, 0.098, 0.08, 0.11], // mid face (dished)
-    [0.47, 0.088, 0.072, 0.10], // nose bridge
-    [0.58, 0.084, 0.078, 0.08], // muzzle
+    [0.0, 0.09, 0.095, 0.09], // poll
+    [0.16, 0.118, 0.106, 0.10], // brow
+    [0.33, 0.098, 0.082, 0.11], // mid face (dished)
+    [0.455, 0.085, 0.067, 0.10], // nose bridge
+    [0.552, 0.079, 0.059, 0.08], // muzzle
   ];
   for (const [along, ry, rz, k] of face) {
     const c = facePoint(along, 0);
@@ -188,33 +188,42 @@ function headPrims(): Prim[] {
   const jowl = facePoint(0.085, -0.092);
   out.push(ellipsoid([jowl[0], jowl[1], 0], [0.155, 0.155, 0.115], [0, 0, FACE_ANGLE], 0.10));
   // cheek
-  const cheek = facePoint(0.31, -0.048);
-  out.push(ellipsoid([cheek[0], cheek[1], 0], [0.118, 0.112, 0.088], [0, 0, FACE_ANGLE], 0.09));
+  const cheek = facePoint(0.30, -0.055);
+  out.push(ellipsoid([cheek[0], cheek[1], 0], [0.125, 0.115, 0.095], [0, 0, FACE_ANGLE], 0.09));
+  // the jaw's lower edge, from the throat forward to the chin
+  const jawEdgeA = facePoint(0.12, -0.138);
+  const jawEdgeB = facePoint(0.53, -0.044);
+  out.push(cone([jawEdgeA[0], jawEdgeA[1], 0], [jawEdgeB[0], jawEdgeB[1], 0], 0.048, 0.032, 0.05));
   // lower jaw line
   const jawA = facePoint(0.085, -0.137);
   const jawB = facePoint(0.585, -0.046);
   out.push(cone([jawA[0], jawA[1], 0], [jawB[0], jawB[1], 0], 0.072, 0.052, 0.08));
   // nose end
-  const nose = facePoint(0.605, -0.012);
-  out.push(sphere([nose[0], nose[1], 0], 0.078, 0.04));
+  // the nose ends in a rounded button, not a ball
+  const nose = facePoint(0.582, 0.004);
+  out.push(ellipsoid([nose[0], nose[1], 0], [0.045, 0.052, 0.058], [0, 0, FACE_ANGLE], 0.045));
 
   // ears
-  out.push(cone([0.965, 2.035, 0.05], [0.905, 2.205, 0.073], 0.043, 0.01, 0.025));
-  out.push(cone([0.965, 2.035, -0.05], [0.905, 2.205, -0.073], 0.043, 0.01, 0.025));
+  out.push(cone([0.955, 2.025, 0.052], [0.895, 2.215, 0.078], 0.055, 0.012, 0.03));
+  out.push(cone([0.955, 2.025, -0.052], [0.895, 2.215, -0.078], 0.055, 0.012, 0.03));
+  // the ear openings
+  const earIn = (s: number) => facePoint(0, 0) && [0.945, 2.05, 0.045 * s];
+  out.push(subtract(ellipsoid(earIn(1) as number[], [0.022, 0.03, 0.016], [0, 0.2, 0], 0.02), 0.02));
+  out.push(subtract(ellipsoid(earIn(-1) as number[], [0.022, 0.03, 0.016], [0, -0.2, 0], 0.02), 0.02));
 
   // eye sockets (eyeballs are separate meshes)
   const eye = facePoint(0.175, 0.012);
-  out.push(subtract(sphere([eye[0], eye[1], 0.088], 0.041, 0.02), 0.018));
-  out.push(subtract(sphere([eye[0], eye[1], -0.088], 0.041, 0.02), 0.018));
+  out.push(subtract(sphere([eye[0], eye[1], 0.086], 0.036, 0.02), 0.016));
+  out.push(subtract(sphere([eye[0], eye[1], -0.086], 0.036, 0.02), 0.016));
 
   // nostrils: shallow dimples on the surface only — cutting deeper hollows
   // the muzzle out from the inside
-  const nostril = facePoint(0.525, 0.005);
+  const nostril = facePoint(0.495, 0.012);
   out.push(subtract(ellipsoid([nostril[0], nostril[1], 0.068], [0.032, 0.03, 0.02], [0, 0.35, 0], 0.015), 0.018));
   out.push(subtract(ellipsoid([nostril[0], nostril[1], -0.068], [0.032, 0.03, 0.02], [0, -0.35, 0], 0.015), 0.018));
 
   // mouth line
-  const mouth = facePoint(0.645, -0.052);
+  const mouth = facePoint(0.615, -0.045);
   out.push(subtract(capsule([mouth[0], mouth[1], 0.048], [mouth[0], mouth[1], -0.048], 0.016, 0.03), 0.03));
   return out;
 }

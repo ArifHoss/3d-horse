@@ -117,13 +117,14 @@ export function buildMane(joints: Joints, seed = 1): MeshData {
 
   for (let i = 0; i < strands; i++) {
     const u = i / (strands - 1);
-    const t = 0.015 + u * 0.965;
+    const t = 0.005 + u * 0.985;
     const root = crestPoint(sdf, t);
     const h1 = hash3(i, seed, 1);
     const h2 = hash3(i, seed, 2);
     const h3 = hash3(i, seed, 3);
 
-    const length = 0.13 + h2 * 0.23 + Math.sin(u * Math.PI) * 0.09;
+    const endFade = Math.min(1, Math.sin(Math.min(1, Math.max(0, u)) * Math.PI) * 2.2);
+    const length = (0.11 + h2 * 0.22) * endFade + 0.02;
     const width = 0.010 + h1 * 0.012;
     const layer = h3 > 0.72 ? 0.02 + h1 * 0.012 : 0.001 + h1 * 0.009;
 

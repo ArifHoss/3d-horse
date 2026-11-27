@@ -150,7 +150,7 @@ const hud = createHud({
   onGait: (g) => setGait(g),
   onRear: () => {
     horse?.triggerRear();
-    void ensureSound().then(() => audio.whinny());
+    void ensureVoice().then(() => audio.whinny());
   },
   onXray: () => setXray(!xrayOn),
   onSound: () => void toggleSound(),
@@ -179,16 +179,14 @@ function setXray(on: boolean) {
   skeleton.setVisible(on);
 }
 
-/** Turn sound on if it is off, so a call is always audible. */
-async function ensureSound() {
-  if (audio.enabled) return;
-  const on = await audio.toggle();
-  hud.setSound(on);
+/** Enable just the voice: a whinny with no wind bed underneath it. */
+async function ensureVoice() {
+  await audio.ensureVoice();
 }
 
 async function toggleSound() {
   const on = await audio.toggle();
-  hud.setSound(on);
+  hud.setSound(on && audio.ambienceEnabled);
   // immediate feedback that audio is alive
   if (on) {
     audio.nicker();
@@ -216,7 +214,7 @@ addEventListener("keydown", (e) => {
   if (e.code === "Space") {
     e.preventDefault();
     horse?.triggerRear();
-    void ensureSound().then(() => audio.whinny());
+    void ensureVoice().then(() => audio.whinny());
   }
   if (e.key === "x" || e.key === "X") setXray(!xrayOn);
   if (e.key === "c" || e.key === "C") setCoat((coatIndex + 1) % COATS.length);
@@ -228,7 +226,7 @@ addEventListener("keydown", (e) => {
 // double click the horse rears up
 renderer.domElement.addEventListener("dblclick", () => {
   horse?.triggerRear();
-  void ensureSound().then(() => audio.whinny());
+  void ensureVoice().then(() => audio.whinny());
 });
 
 // a plain click (not an orbit drag) gets you a whinny
@@ -238,7 +236,7 @@ renderer.domElement.addEventListener("pointerdown", (e) => {
 });
 renderer.domElement.addEventListener("pointerup", (e) => {
   const moved = Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]);
-  if (moved < 6) void ensureSound().then(() => audio.whinny());
+  if (moved < 6) void ensureVoice().then(() => audio.whinny());
 });
 
 /* ------------------------------------------------------------------ *

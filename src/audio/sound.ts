@@ -10,6 +10,11 @@ export class StableAudio {
   private noiseBuffer: AudioBuffer | null = null;
   private windGain: GainNode | null = null;
   private windFilter: BiquadFilterNode | null = null;
+  private lastWind = 0;
+  /** the ambience bed is only on when sound was explicitly switched on */
+  private ambienceOn = false;
+  /** wind is muted while a whinny plays */
+  private duckUntil = 0;
   enabled = false;
 
   /** Must be called from a user gesture. */
@@ -17,7 +22,14 @@ export class StableAudio {
     if (!this.ctx) this.init();
     if (!this.ctx) return false;
     if (this.ctx.state === "suspended") await this.ctx.resume();
+    // a voice-only session: the first click turns the ambience bed on
+    if (this.enabled && !this.ambienceOn) {
+      this.ambienceOn = true;
+      this.setWind(this.lastWind);
+      return true;
+    }
     this.enabled = !this.enabled;
+    this.ambienceOn = this.enabled;
     if (this.master) {
       this.master.gain.cancelScheduledValues(this.ctx.currentTime);
       this.master.gain.setTargetAtTime(this.enabled ? 0.9 : 0, this.ctx.currentTime, 0.15);
@@ -78,9 +90,34 @@ export class StableAudio {
   /** Level of the ambient bed, 0..1. */
   setWind(level: number) {
     if (!this.ctx || !this.windGain || !this.windFilter) return;
+    this.lastWind = level;
     const t = this.ctx.currentTime;
-    this.windGain.gain.setTargetAtTime(level * 0.3, t, 0.4);
+    const ducked = t < this.duckUntil;
+    const target = this.ambienceOn && !ducked ? level * 0.3 : 0;
+    this.windGain.gain.setTargetAtTime(target, t, ducked ? 0.08 : 0.4);
     this.windFilter.frequency.setTargetAtTime(500 + level * 1100, t, 0.6);
+  }
+
+  /**
+   * Turn on just enough of the audio system to speak: the context and the
+   * master gain, but not the wind bed. Used by the whinny, so clicking the
+   * horse gives you a horse and not a gale.
+   */
+  async ensureVoice(): Promise<boolean> {
+    if (!this.ctx) this.init();
+    if (!this.ctx) return false;
+    if (this.ctx.state === "suspended") await this.ctx.resume();
+    this.enabled = true;
+    this.ambienceOn = false;
+    if (this.master) {
+      this.master.gain.setTargetAtTime(0.9, this.ctx.currentTime, 0.1);
+    }
+    this.setWind(this.lastWind);
+    return true;
+  }
+
+  get ambienceEnabled() {
+    return this.ambienceOn;
   }
 
   /**
@@ -143,6 +180,9 @@ export class StableAudio {
     const ctx = this.ctx;
     const t = ctx.currentTime + 0.02;
     const dur = 1.15 + Math.random() * 0.25;
+    // no wind under the call
+    this.duckUntil = t + dur + 0.35;
+    this.setWind(this.lastWind);
     const out = ctx.createGain();
     out.gain.value = 0.9 * Math.min(1.4, Math.max(0.4, intensity));
 
