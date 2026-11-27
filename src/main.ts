@@ -70,7 +70,7 @@ controls.update();
 const sky = createSky(DAY);
 scene.add(sky);
 
-const sun = new THREE.DirectionalLight(DAY.sun.getHex(), 2.2);
+const sun = new THREE.DirectionalLight(DAY.sun.getHex(), 2.6);
 sun.position.copy(DAY.sunDir).multiplyScalar(9);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
@@ -88,10 +88,10 @@ scene.add(sun);
 scene.add(sun.target);
 sun.target.position.set(0, 0.9, 0);
 
-const hemi = new THREE.HemisphereLight(0xc6dcff, 0x4a6130, 1.85);
+const hemi = new THREE.HemisphereLight(0xc6dcff, 0x4a6130, 1.25);
 scene.add(hemi);
 // a subtle fill from the opposite side keeps the shadow side readable
-const fill = new THREE.DirectionalLight(0xdfe9ff, 1.3);
+const fill = new THREE.DirectionalLight(0xdfe9ff, 0.9);
 fill.position.set(-6, 3.0, -5);
 scene.add(fill);
 

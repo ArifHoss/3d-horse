@@ -25,7 +25,7 @@ export interface Coat {
 export const COATS: Coat[] = [
   {
     id: "bay", name: "Bay",
-    body: "#8a4a1e", points: "#161010", mane: "#100c0a", muzzle: "#1d1411", hoof: "#1a1514",
+    body: "#87522c", points: "#161010", mane: "#100c0a", muzzle: "#1d1411", hoof: "#1a1514",
     socks: [1, 0, 0, 0.55], blaze: 1, star: 0.9,
   },
   {
@@ -76,9 +76,24 @@ export function coatColors(mesh: MeshData, coat: Coat): Float32Array {
 
     // start from the body colour, with a little organic variation
     let r = body.r, g = body.g, b = body.b;
+
+    // top-to-bottom gradient: the sun bleaches the back and croup, while the
+    // belly, flank and upper legs sit in their own shadow
+    const vertical = smoothstep(1.02, 1.58, y);
+    const lift = 0.78 + 0.3 * vertical;
+    r *= lift; g *= lift; b *= lift;
+
+    // dappling: soft rings of slightly darker coat, characteristic of bays
+    const dapN = noise3(x * 13, y * 13, z * 13) + noise3(x * 27, y * 27, z * 27) * 0.5;
+    const dapple = smoothstep(0.18, 0.55, Math.abs(dapN)) * 0.055;
+    r *= 1 - dapple * 0.5;
+    g *= 1 - dapple * 0.35;
+    b *= 1 - dapple * 0.2;
+
+    // fine hair grain
     const grain = noise3(x * 26, y * 26, z * 26) * 0.5 + noise3(x * 9, y * 9, z * 9) * 0.5;
     const grain2 = noise3(x * 60 + 4, y * 60, z * 60);
-    const k = 1 + grain * 0.05 + grain2 * 0.02;
+    const k = 1 + grain * 0.035 + grain2 * 0.015;
     r *= k; g *= k; b *= k;
 
     // dapples for greys
