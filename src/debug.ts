@@ -33,6 +33,12 @@ ground.receiveShadow = true;
 scene.add(ground);
 
 const sdf = buildSdf();
+console.log("probe", [0, 1.3, 0].map((_, i) => 0), 
+  "barrel", sdf(0, 1.3, 0).toFixed(3),
+  "chest", sdf(0.4, 1.3, 0).toFixed(3),
+  "croup", sdf(-0.6, 1.35, 0).toFixed(3),
+  "tail", sdf(-0.95, 1.35, 0).toFixed(3),
+  "outside", sdf(0, 2.0, 0).toFixed(3));
 const mesh = surfaceNets(sdf, SDF_BOUNDS.min, SDF_BOUNDS.max, {
   h: Number(new URLSearchParams(location.search).get("h") ?? 0.022),
   projectIterations: Number(new URLSearchParams(location.search).get("proj") ?? 2),

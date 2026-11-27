@@ -227,8 +227,8 @@ function anchoredZ(pts: Vec3[], v: number): number {
 export function buildTail(joints: Joints, seed = 2): MeshData {
   const b: RibbonBuilder = { positions: [], indices: [], count: 0 };
   // the dock: the fleshy base, from the croup back and down
-  const dockA: Vec3 = [-0.965, 1.495, 0];
-  const dockB: Vec3 = [-1.105, 1.30, 0];
+  const dockA: Vec3 = [-0.945, 1.445, 0];
+  const dockB: Vec3 = [-1.10, 1.295, 0];
   const strands = 380;
 
   for (let i = 0; i < strands; i++) {

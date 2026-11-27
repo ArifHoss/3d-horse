@@ -10,7 +10,7 @@
 import { smin, smax } from "./blend";
 
 export type Prim = {
-  kind: "sphere" | "ellipsoid" | "capsule" | "cone" | "box";
+  kind: "sphere" | "ellipsoid" | "capsule" | "cone" | "box" | "xloft";
   /** center (sphere/ellipsoid/box) or segment start (capsule/cone) */
   cx: number;
   cy: number;
@@ -41,7 +41,25 @@ export type Prim = {
   sub: boolean;
   /** bounding radius from the primitive's centre, for culling */
   bound: number;
+  /** cross-sections of an xloft */
+  sections?: AxisSection[];
 };
+
+/**
+ * One cross-section of a lofted body, perpendicular to the X axis.
+ * `b` is the half-height above the centre line, `b2` the half-height below
+ * it, so the topline and the underline are independent; `n` is the
+ * superellipse exponent (2 = ellipse, higher = flatter sides).
+ */
+export interface AxisSection {
+  x: number;
+  cy: number;
+  cz: number;
+  a: number;
+  b: number;
+  b2: number;
+  n: number;
+}
 
 const IDENTITY = [1, 0, 0, 0, 1, 0, 0, 0, 1] as const;
 
@@ -133,6 +151,28 @@ export const box = (c: number[], half: number[], euler: [number, number, number]
   return p;
 };
 
+/**
+ * A lofted tube along X: the surface is exactly the interpolated sections, so
+ * the silhouette is authored rather than produced by blending masses.
+ */
+export const xloft = (sectionsIn: AxisSection[], k = 0.12): Prim => {
+  const p = base();
+  p.kind = "xloft";
+  // the evaluator walks the sections in ascending x
+  const sections = [...sectionsIn].sort((u, v) => u.x - v.x);
+  p.sections = sections;
+  p.k = k;
+  const x0 = sections[0].x;
+  const x1 = sections[sections.length - 1].x;
+  p.cx = (x0 + x1) / 2;
+  p.cy = (sections.reduce((m, s) => Math.max(m, s.cy + s.b), -1e9) +
+          sections.reduce((m, s) => Math.min(m, s.cy - s.b2), 1e9)) / 2;
+  let r = 0;
+  for (const s of sections) r = Math.max(r, Math.max(s.a, s.b, s.b2));
+  p.bound = Math.hypot((x1 - x0) / 2, r) + 0.06;
+  return p;
+};
+
 export const subtract = (p: Prim, k = 0.02): Prim => {
   p.sub = true;
   p.k = k;
@@ -190,6 +230,34 @@ function evalPrim(p: Prim, px: number, py: number, pz: number): number {
       if (Math.sign(z) * a2 * z2 > k) return Math.sqrt(x2 + z2) * il2 - r2;
       if (Math.sign(y) * a2 * y2 < k) return Math.sqrt(x2 + y2) * il2 - r1;
       return (Math.sqrt(x2 * a2 * il2) + y * rr) * il2 - r1;
+    }
+    case "xloft": {
+      const S = p.sections!;
+      const n = S.length;
+      const x0 = S[0].x;
+      const x1 = S[n - 1].x;
+      const xc = px < x0 ? x0 : px > x1 ? x1 : px;
+      let i = 0;
+      while (i < n - 2 && S[i + 1].x < xc) i++;
+      const s0 = S[i];
+      const s1 = S[i + 1];
+      const t = s1.x > s0.x ? (xc - s0.x) / (s1.x - s0.x) : 0;
+      const cy = s0.cy + (s1.cy - s0.cy) * t;
+      const cz = s0.cz + (s1.cz - s0.cz) * t;
+      const a = s0.a + (s1.a - s0.a) * t;
+      const e = s0.n + (s1.n - s0.n) * t;
+      const dy = py - cy;
+      const b = dy >= 0 ? s0.b + (s1.b - s0.b) * t : s0.b2 + (s1.b2 - s0.b2) * t;
+      const dz = pz - cz;
+      const u = Math.abs(dy) / b;
+      const v = Math.abs(dz) / a;
+      const m = Math.pow(Math.pow(u, e) + Math.pow(v, e), 1 / e);
+      const prof = (m - 1) * Math.min(a, b);
+      // axial: how far past the ends the point sits (negative while inside,
+      // so the interior keeps the profile distance instead of collapsing to 0)
+      const dx = px < x0 ? x0 - px : px > x1 ? px - x1 : -1e9;
+      if (dx <= 0) return prof;
+      return Math.hypot(Math.max(prof, 0), dx) + Math.min(Math.max(prof, dx), 0);
     }
     case "box": {
       const qx0 = px - p.cx, qy0 = py - p.cy, qz0 = pz - p.cz;

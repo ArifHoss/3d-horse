@@ -18,7 +18,7 @@
  *   poll          0.94 / 1.95      muzzle         1.35 / 1.47
  */
 
-import { capsule, compile, cone, ellipsoid, sphere, subtract, type Prim, type Sdf } from "../core/sdf";
+import { capsule, compile, cone, ellipsoid, sphere, subtract, xloft, type AxisSection, type Prim, type Sdf } from "../core/sdf";
 
 export type Vec3 = [number, number, number];
 
@@ -109,30 +109,37 @@ const sec = (x: number, top: number, bottom: number, hw: number, rot = 0, rx?: n
  * Trunk — front to back
  * ------------------------------------------------------------------ */
 
-const BODY: Section[] = [
-  sec(0.62, 1.46, 1.12, 0.125), // breast
-  sec(0.50, 1.56, 1.04, 0.165), // chest
-  sec(0.30, 1.625, 1.00, 0.185), // withers / girth
-  sec(0.04, 1.585, 1.015, 0.196), // barrel
-  sec(-0.28, 1.588, 1.06, 0.19), // loin
-  sec(-0.55, 1.615, 1.13, 0.176), // croup
-  sec(-0.76, 1.575, 1.16, 0.158, 0, 0.16), // buttock
-  sec(-0.90, 1.495, 1.21, 0.132, 0, 0.12), // point of buttock
-  sec(-0.975, 1.435, 1.28, 0.088, 0, 0.082), // tail head
+/**
+ * The trunk, as a lofted surface: each row is (x, topline, underline,
+ * half-width, superellipse exponent). Because the surface *is* these
+ * numbers, the croup and buttock lines are authored instead of emerging
+ * from blended masses. b2 (the underline) is what opens the gap between the
+ * hindquarter and the leg.
+ */
+const BODY_LOFT: AxisSection[] = [
+  { x: 0.64, cy: 1.30, cz: 0, a: 0.10, b: 0.13, b2: 0.13, n: 2.45 }, // breast
+  { x: 0.56, cy: 1.30, cz: 0, a: 0.14, b: 0.25, b2: 0.26, n: 2.45 },
+  { x: 0.44, cy: 1.29, cz: 0, a: 0.168, b: 0.28, b2: 0.26, n: 2.45 }, // chest
+  { x: 0.30, cy: 1.30, cz: 0, a: 0.182, b: 0.325, b2: 0.30, n: 2.45 }, // withers / girth
+  { x: 0.10, cy: 1.30, cz: 0, a: 0.192, b: 0.30, b2: 0.29, n: 2.45 }, // barrel
+  { x: -0.10, cy: 1.30, cz: 0, a: 0.194, b: 0.295, b2: 0.285, n: 2.45 },
+  { x: -0.30, cy: 1.315, cz: 0, a: 0.19, b: 0.275, b2: 0.255, n: 2.45 }, // loin
+  { x: -0.50, cy: 1.335, cz: 0, a: 0.18, b: 0.285, b2: 0.235, n: 2.45 },
+  { x: -0.62, cy: 1.35, cz: 0, a: 0.172, b: 0.27, b2: 0.215, n: 2.45 }, // croup
+  { x: -0.76, cy: 1.36, cz: 0, a: 0.16, b: 0.225, b2: 0.2, n: 2.45 }, // buttock
+  { x: -0.88, cy: 1.355, cz: 0, a: 0.128, b: 0.165, b2: 0.165, n: 2.45 }, // point of buttock
+  { x: -0.95, cy: 1.355, cz: 0, a: 0.085, b: 0.105, b2: 0.115, n: 2.45 }, // tail head
+  { x: -1.00, cy: 1.355, cz: 0, a: 0.05, b: 0.06, b2: 0.07, n: 2.45 },
 ];
 
 /** Withers, crest and throat are separate so they can read as ridges. */
 function trunkPrims(): Prim[] {
-  const out = loft(BODY, 4, 0.175, 0.12);
+  const out: Prim[] = [xloft(BODY_LOFT, 0.12)];
   // withers ridge
   out.push(capsule([0.14, 1.60, 0], [0.36, 1.625, 0], 0.05, 0.13));
   // shoulder blades — the sloped mass in front of the barrel
   out.push(ellipsoid([0.42, 1.30, 0.135], [0.19, 0.235, 0.07], [0, 0, 0.55], 0.15));
   out.push(ellipsoid([0.42, 1.30, -0.135], [0.19, 0.235, 0.07], [0, 0, 0.55], 0.15));
-  // tail head bump
-  out.push(cone([-0.94, 1.49, 0], [-1.10, 1.28, 0], 0.075, 0.034, 0.07));
-  // girth: the chest hangs a little deeper than the ellipse
-  out.push(ellipsoid([0.28, 1.19, 0], [0.28, 0.17, 0.235], null, 0.17));
   return out;
 }
 
