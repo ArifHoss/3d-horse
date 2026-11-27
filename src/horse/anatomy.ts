@@ -142,19 +142,19 @@ function trunkPrims(): Prim[] {
 
 const NECK_ANGLE = 0.66;
 const NECK: Section[] = [
-  sec(0.27, 1.60, 1.25, 0.182, NECK_ANGLE),
-  sec(0.49, 1.72, 1.37, 0.172, NECK_ANGLE),
-  sec(0.67, 1.835, 1.50, 0.158, NECK_ANGLE),
-  sec(0.83, 1.928, 1.655, 0.138, NECK_ANGLE),
-  sec(0.94, 1.978, 1.775, 0.112, NECK_ANGLE),
+  sec(0.27, 1.62, 1.19, 0.158, NECK_ANGLE),
+  sec(0.49, 1.755, 1.315, 0.15, NECK_ANGLE),
+  sec(0.67, 1.865, 1.455, 0.138, NECK_ANGLE),
+  sec(0.83, 1.952, 1.63, 0.12, NECK_ANGLE),
+  sec(0.94, 1.99, 1.755, 0.1, NECK_ANGLE),
 ];
 
 function neckPrims(): Prim[] {
-  const out = loft(NECK, 4, 0.152, 0.10);
+  const out = loft(NECK, 4, 0.145, 0.10);
   // crest: a soft ridge along the top line of the neck
-  out.push(capsule([0.26, 1.605, 0], [0.95, 1.985, 0], 0.062, 0.17));
+  out.push(capsule([0.26, 1.615, 0], [0.95, 1.99, 0], 0.06, 0.17));
   // throat: fill under the neck where it meets the chest
-  out.push(ellipsoid([0.48, 1.40, 0], [0.235, 0.185, 0.165], [0, 0, 0.5], 0.19));
+  out.push(ellipsoid([0.48, 1.38, 0], [0.235, 0.195, 0.15], [0, 0, 0.5], 0.19));
   return out;
 }
 
@@ -174,22 +174,22 @@ function headPrims(): Prim[] {
   const out: Prim[] = [];
   // sections along the face axis: along, halfThickness, halfWidth, blend
   const face: Array<[number, number, number, number]> = [
-    [0.0, 0.09, 0.095, 0.09], // poll
-    [0.16, 0.118, 0.106, 0.10], // brow
-    [0.33, 0.098, 0.082, 0.11], // mid face (dished)
-    [0.455, 0.085, 0.067, 0.10], // nose bridge
-    [0.552, 0.079, 0.059, 0.08], // muzzle
+    [0.0, 0.088, 0.09, 0.09], // poll
+    [0.16, 0.115, 0.092, 0.10], // brow
+    [0.33, 0.095, 0.072, 0.11], // mid face (dished)
+    [0.455, 0.082, 0.058, 0.10], // nose bridge
+    [0.552, 0.075, 0.05, 0.08], // muzzle
   ];
   for (const [along, ry, rz, k] of face) {
     const c = facePoint(along, 0);
     out.push(ellipsoid([c[0], c[1], 0], [0.115, ry, rz], [0, 0, FACE_ANGLE], k));
   }
   // jowl: the big round mass behind the jaw
-  const jowl = facePoint(0.085, -0.092);
-  out.push(ellipsoid([jowl[0], jowl[1], 0], [0.155, 0.155, 0.115], [0, 0, FACE_ANGLE], 0.10));
+  const jowl = facePoint(0.085, -0.088);
+  out.push(ellipsoid([jowl[0], jowl[1], 0], [0.15, 0.15, 0.108], [0, 0, FACE_ANGLE], 0.10));
   // cheek
   const cheek = facePoint(0.30, -0.055);
-  out.push(ellipsoid([cheek[0], cheek[1], 0], [0.125, 0.115, 0.095], [0, 0, FACE_ANGLE], 0.09));
+  out.push(ellipsoid([cheek[0], cheek[1], 0], [0.122, 0.112, 0.086], [0, 0, FACE_ANGLE], 0.09));
   // the jaw's lower edge, from the throat forward to the chin
   const jawEdgeA = facePoint(0.12, -0.138);
   const jawEdgeB = facePoint(0.53, -0.044);
@@ -201,30 +201,30 @@ function headPrims(): Prim[] {
   // nose end
   // the nose ends in a rounded button, not a ball
   const nose = facePoint(0.582, 0.004);
-  out.push(ellipsoid([nose[0], nose[1], 0], [0.045, 0.052, 0.058], [0, 0, FACE_ANGLE], 0.045));
+  out.push(ellipsoid([nose[0], nose[1], 0], [0.042, 0.05, 0.05], [0, 0, FACE_ANGLE], 0.045));
 
   // ears
-  out.push(cone([0.955, 2.025, 0.052], [0.895, 2.215, 0.078], 0.055, 0.012, 0.03));
-  out.push(cone([0.955, 2.025, -0.052], [0.895, 2.215, -0.078], 0.055, 0.012, 0.03));
-  // the ear openings
-  const earIn = (s: number) => facePoint(0, 0) && [0.945, 2.05, 0.045 * s];
-  out.push(subtract(ellipsoid(earIn(1) as number[], [0.022, 0.03, 0.016], [0, 0.2, 0], 0.02), 0.02));
-  out.push(subtract(ellipsoid(earIn(-1) as number[], [0.022, 0.03, 0.016], [0, -0.2, 0], 0.02), 0.02));
+  out.push(cone([0.95, 2.015, 0.052], [0.878, 2.255, 0.082], 0.058, 0.008, 0.03));
+  out.push(cone([0.95, 2.015, -0.052], [0.878, 2.255, -0.082], 0.058, 0.008, 0.03));
+  // the cup of each ear, scooped out of the front face
+  const earCup = (s: number): number[] => [0.956, 2.085, 0.054 * s];
+  out.push(subtract(ellipsoid(earCup(1), [0.032, 0.055, 0.018], [0, 0.18, 0], 0.012), 0.02));
+  out.push(subtract(ellipsoid(earCup(-1), [0.032, 0.055, 0.018], [0, -0.18, 0], 0.012), 0.02));
 
   // eye sockets (eyeballs are separate meshes)
   const eye = facePoint(0.175, 0.012);
-  out.push(subtract(sphere([eye[0], eye[1], 0.086], 0.036, 0.02), 0.016));
-  out.push(subtract(sphere([eye[0], eye[1], -0.086], 0.036, 0.02), 0.016));
+  out.push(subtract(sphere([eye[0], eye[1], 0.088], 0.034, 0.02), 0.014));
+  out.push(subtract(sphere([eye[0], eye[1], -0.088], 0.034, 0.02), 0.014));
 
   // nostrils: shallow dimples on the surface only — cutting deeper hollows
   // the muzzle out from the inside
-  const nostril = facePoint(0.495, 0.012);
-  out.push(subtract(ellipsoid([nostril[0], nostril[1], 0.068], [0.032, 0.03, 0.02], [0, 0.35, 0], 0.015), 0.018));
-  out.push(subtract(ellipsoid([nostril[0], nostril[1], -0.068], [0.032, 0.03, 0.02], [0, -0.35, 0], 0.015), 0.018));
+  const nostril = facePoint(0.5, 0.008);
+  out.push(subtract(ellipsoid([nostril[0], nostril[1], 0.062], [0.038, 0.05, 0.034], [0, 0.3, 0], 0.018), 0.02));
+  out.push(subtract(ellipsoid([nostril[0], nostril[1], -0.062], [0.038, 0.05, 0.034], [0, -0.3, 0], 0.018), 0.02));
 
   // mouth line
-  const mouth = facePoint(0.615, -0.045);
-  out.push(subtract(capsule([mouth[0], mouth[1], 0.048], [mouth[0], mouth[1], -0.048], 0.016, 0.03), 0.03));
+  const mouth = facePoint(0.6, -0.038);
+  out.push(subtract(capsule([mouth[0], mouth[1], 0.054], [mouth[0], mouth[1], -0.054], 0.013, 0.02), 0.025));
   return out;
 }
 

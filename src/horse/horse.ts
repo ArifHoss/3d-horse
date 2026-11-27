@@ -93,12 +93,12 @@ export class Horse {
 
     const mat = new THREE.MeshPhysicalMaterial({
       vertexColors: true,
-      roughness: 0.66,
+      roughness: 0.78,
       metalness: 0,
       // coat sheen: the soft, slightly directional highlight horsehair has
-      sheen: 0.42,
-      sheenRoughness: 0.6,
-      sheenColor: new THREE.Color("#e6cfae"),
+      sheen: 0.22,
+      sheenRoughness: 0.75,
+      sheenColor: new THREE.Color("#d9c3a4"),
     });
 
     this.body = new THREE.SkinnedMesh(geo, mat);
@@ -128,51 +128,6 @@ export class Horse {
     const headBone = this.rig.byName.get("head")!;
     const headRest = this.joints.head;
 
-    // find the real skin surface so features sit on it, not inside it
-    const field = buildSdf();
-    const surfacePoint = (from: THREE.Vector3, dir: THREE.Vector3, clearance = 0.003) => {
-      const p = from.clone();
-      for (let t = 0; t < 0.12; t += 0.002) {
-        p.copy(from).addScaledVector(dir, t);
-        if (field(p.x, p.y, p.z) > clearance) return p.clone();
-      }
-      return from.clone().addScaledVector(dir, 0.12);
-    };
-
-    // nostrils and the mouth line are separate geometry: at the mesh
-    // resolution the distance field cannot hold a 2 cm crease
-    const darkMat = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0x140d0a),
-      roughness: 0.92,
-      metalness: 0,
-    });
-    const nostrilGeo = new THREE.SphereGeometry(1, 16, 12);
-    for (const side of [1, -1]) {
-      const dir = new THREE.Vector3(0, 0, side);
-      // nostrils sit high on the muzzle, not down by the jaw
-      const p = surfacePoint(new THREE.Vector3(1.298, 1.559, 0), dir, 0.002);
-      const n = new THREE.Mesh(nostrilGeo, darkMat);
-      n.scale.set(0.017, 0.05, 0.014);
-      // sit just proud of the skin so it reads from any angle
-      n.position.set(p.x - headRest[0], p.y - headRest[1], (p.z + 0.002 * side) - headRest[2]);
-      n.rotation.z = -0.62;
-      headBone.add(n);
-    }
-    // the lip line runs across the front of the muzzle
-    const mouthDir = new THREE.Vector3(-0.788, -0.6157, 0);
-    const mp = surfacePoint(new THREE.Vector3(1.286, 1.487, 0), mouthDir, 0.002);
-    const mouth = new THREE.Mesh(new THREE.CapsuleGeometry(0.013, 0.07, 8, 14), darkMat);
-    mouth.rotation.x = Math.PI / 2;
-    mouth.scale.set(1, 1, 0.7);
-    mouth.position.set(
-      mp.x - headRest[0] + 0.003,
-      mp.y - headRest[1] - 0.002,
-      mp.z - headRest[2],
-    );
-    headBone.add(mouth);
-
-    // eyes: a glossy amber ball with a black pupil, a wet highlight and a
-    // coat-coloured lid rim — a bare black bead reads as a hole
     const eyeMat = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color(0x2a1409),
       roughness: 0.22,
@@ -194,10 +149,11 @@ export class Horse {
       clearcoatRoughness: 0.02,
     });
     const glintMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const eyeR = 0.033;
+    const eyeR = 0.038;
     for (const side of [1, -1]) {
       const eye = new THREE.Mesh(new THREE.SphereGeometry(eyeR, 28, 20), eyeMat);
-      eye.position.set(1.097 - headRest[0], 1.844 - headRest[1], 0.082 * side);
+      eye.scale.set(1, 1.18, 0.78);
+      eye.position.set(1.097 - headRest[0], 1.843 - headRest[1], 0.085 * side);
       headBone.add(eye);
 
       const pupil = new THREE.Mesh(new THREE.SphereGeometry(eyeR * 0.52, 18, 14), pupilMat);
@@ -243,11 +199,12 @@ export class Horse {
 
     const mat = new THREE.MeshPhysicalMaterial({
       vertexColors: true,
-      roughness: 0.42,
+      roughness: 0.6,
       metalness: 0,
-      sheen: 1,
-      sheenRoughness: 0.3,
-      sheenColor: new THREE.Color("#8a7a6a"),
+      // hair should stay dark: a strong sheen turns black hair brown
+      sheen: 0.3,
+      sheenRoughness: 0.55,
+      sheenColor: new THREE.Color("#5c4f42"),
       side: THREE.DoubleSide,
     });
     const m = new THREE.SkinnedMesh(geo, mat);

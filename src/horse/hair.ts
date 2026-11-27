@@ -42,6 +42,28 @@ function addRibbon(b: RibbonBuilder, pts: Vec3[], widths: number[], axis: "z" | 
   }
 }
 
+/** A quad grid: rows run along the crest, columns down the neck. */
+function addSheet(b: RibbonBuilder, grid: Vec3[][], colorLevel = 1) {
+  const rows = grid.length;
+  const cols = grid[0].length;
+  const base = b.count;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const p = grid[r][c];
+      b.positions.push(p[0], p[1], p[2]);
+      b.count++;
+    }
+  }
+  for (let r = 0; r < rows - 1; r++) {
+    for (let c = 0; c < cols - 1; c++) {
+      const a = base + r * cols + c;
+      const bb = a + cols;
+      b.indices.push(a, bb, a + 1, a + 1, bb, bb + 1);
+    }
+  }
+  void colorLevel;
+}
+
 function toMeshData(b: RibbonBuilder): MeshData {
   const positions = new Float32Array(b.positions);
   const normals = new Float32Array(positions.length);
@@ -124,8 +146,8 @@ export function buildMane(joints: Joints, seed = 1): MeshData {
     const h3 = hash3(i, seed, 3);
 
     const endFade = Math.min(1, Math.sin(Math.min(1, Math.max(0, u)) * Math.PI) * 2.2);
-    const length = (0.11 + h2 * 0.22) * endFade + 0.02;
-    const width = 0.010 + h1 * 0.012;
+    const length = (0.18 + h2 * 0.26) * endFade + 0.03;
+    const width = 0.013 + h1 * 0.015;
     const layer = h3 > 0.72 ? 0.02 + h1 * 0.012 : 0.001 + h1 * 0.009;
 
     const pts: Vec3[] = [];
@@ -153,7 +175,27 @@ export function buildMane(joints: Joints, seed = 1): MeshData {
     addRibbon(b, pts, widths.map((w) => w * 0.7), "x");
   }
 
-  // forelock: falls forward over the forehead, between the ears
+  // forelock: a solid tuft over the forehead, between the ears
+  {
+    const rows = 14;
+    const cols = 4;
+    const grid: Vec3[][] = [];
+    for (let r = 0; r < rows; r++) {
+      const u = r / (rows - 1);
+      const t = 0.9 + u * 0.1;
+      const root = crestPoint(sdf, t);
+      const row: Vec3[] = [];
+      for (let c = 0; c < cols; c++) {
+        const v = c / (cols - 1);
+        const x = root[0] + 0.085 * v + (u - 0.5) * 0.03 * v;
+        const y = root[1] - 0.11 * v - Math.abs(u - 0.5) * 0.01;
+        row.push(pushOut(sdf, [x, y, (u - 0.5) * 0.11], [0.788, 0.616, 0], 0.006));
+      }
+      grid.push(row);
+    }
+    addSheet(b, grid);
+  }
+
   for (let i = 0; i < 34; i++) {
     const h1 = hash3(i, seed + 7, 5);
     const h2 = hash3(i, seed + 7, 6);
@@ -203,7 +245,7 @@ export function buildTail(joints: Joints, seed = 2): MeshData {
     const length = 0.58 + h1 * 0.40 - du * 0.12;
     // a dense core with long outer strands that fall in a curtain
     const core = i < 60;
-    const zoff = core ? (h2 - 0.5) * 0.03 : (h2 - 0.5) * 0.085;
+    const zoff = core ? (h2 - 0.5) * 0.025 : (h2 - 0.5) * 0.065;
     const back = 0.10 + h3 * 0.16;
     const width = core ? 0.06 + h1 * 0.035 : 0.03 + h1 * 0.03;
     const pts: Vec3[] = [];
