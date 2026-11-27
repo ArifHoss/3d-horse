@@ -207,14 +207,15 @@ function headPrims(): Prim[] {
   out.push(subtract(sphere([eye[0], eye[1], 0.088], 0.041, 0.02), 0.018));
   out.push(subtract(sphere([eye[0], eye[1], -0.088], 0.041, 0.02), 0.018));
 
-  // nostrils
-  const nostril = facePoint(0.555, -0.026);
-  out.push(subtract(ellipsoid([nostril[0], nostril[1], 0.044], [0.036, 0.027, 0.024], [0, 0.4, 0], 0.015), 0.02));
-  out.push(subtract(ellipsoid([nostril[0], nostril[1], -0.044], [0.036, 0.027, 0.024], [0, -0.4, 0], 0.015), 0.02));
+  // nostrils: shallow dimples on the surface only — cutting deeper hollows
+  // the muzzle out from the inside
+  const nostril = facePoint(0.525, 0.005);
+  out.push(subtract(ellipsoid([nostril[0], nostril[1], 0.068], [0.032, 0.03, 0.02], [0, 0.35, 0], 0.015), 0.018));
+  out.push(subtract(ellipsoid([nostril[0], nostril[1], -0.068], [0.032, 0.03, 0.02], [0, -0.35, 0], 0.015), 0.018));
 
   // mouth line
-  const mouth = facePoint(0.66, -0.04);
-  out.push(subtract(capsule([mouth[0], mouth[1], 0.036], [mouth[0], mouth[1], -0.036], 0.009, 0.01), 0.012));
+  const mouth = facePoint(0.645, -0.052);
+  out.push(subtract(capsule([mouth[0], mouth[1], 0.048], [mouth[0], mouth[1], -0.048], 0.016, 0.03), 0.03));
   return out;
 }
 

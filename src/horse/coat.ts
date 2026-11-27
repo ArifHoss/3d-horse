@@ -129,11 +129,13 @@ export function coatColors(mesh: MeshData, coat: Coat): Float32Array {
       }
     }
 
-    // blaze down the face (face axis: from the poll, 52° below horizontal)
+    // face frame: along the face axis (from the poll, 52° below horizontal)
+    const fx = x - 0.98;
+    const fy = y - 1.98;
+    const along = fx * 0.6157 + fy * -0.788;
+
+    // blaze down the face
     if (coat.blaze > 0) {
-      const fx = x - 0.98;
-      const fy = y - 1.98;
-      const along = fx * 0.6157 + fy * -0.788;
       const across = Math.abs(z);
       const wobble = noise3(x * 26, y * 26, z * 26) * 0.016;
       const width = 0.013 + Math.max(0, along) * 0.03 + wobble;
@@ -147,6 +149,23 @@ export function coatColors(mesh: MeshData, coat: Coat): Float32Array {
         g += (white.g - g) * m;
         b += (white.b - b) * m;
       }
+    }
+
+    // the nose itself stays dark under a blaze, as it does on a real bay
+    const noseTip = smoothstep(0.56, 0.66, along) * 0.9;
+    if (noseTip > 0.001) {
+      r += (muzzle.r - r) * noseTip;
+      g += (muzzle.g - g) * noseTip;
+      b += (muzzle.b - b) * noseTip;
+    }
+
+    // lips: a dark line where the mouth closes
+    const lipBand = Math.abs(fx * 0.788 + fy * 0.6157 + 0.05);
+    if (along > 0.5 && lipBand < 0.016) {
+      const m = smoothstep(0.017, 0.004, lipBand) * 0.75;
+      r += (muzzle.r - r) * m;
+      g += (muzzle.g - g) * m;
+      b += (muzzle.b - b) * m;
     }
 
     // star on the forehead

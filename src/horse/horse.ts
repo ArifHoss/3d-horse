@@ -64,7 +64,7 @@ export class Horse {
     const t0 = performance.now();
     const sdf = buildSdf();
     const mesh = surfaceNets(sdf, SDF_BOUNDS.min, SDF_BOUNDS.max, {
-      h: 0.0205,
+      h: 0.018,
       smoothIterations: 3,
       projectIterations: 2,
       aoStrength: 0.62,
@@ -123,6 +123,52 @@ export class Horse {
     this.tail.bind(this.rig.skeleton);
 
     // ---- eyes ----------------------------------------------------------
+    const headBone = this.rig.byName.get("head")!;
+    const headRest = this.joints.head;
+
+    // find the real skin surface so features sit on it, not inside it
+    const field = buildSdf();
+    const surfacePoint = (from: THREE.Vector3, dir: THREE.Vector3, clearance = 0.003) => {
+      const p = from.clone();
+      for (let t = 0; t < 0.12; t += 0.002) {
+        p.copy(from).addScaledVector(dir, t);
+        if (field(p.x, p.y, p.z) > clearance) return p.clone();
+      }
+      return from.clone().addScaledVector(dir, 0.12);
+    };
+
+    // nostrils and the mouth line are separate geometry: at the mesh
+    // resolution the distance field cannot hold a 2 cm crease
+    const darkMat = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color(0x140d0a),
+      roughness: 0.92,
+      metalness: 0,
+    });
+    const nostrilGeo = new THREE.SphereGeometry(1, 16, 12);
+    for (const side of [1, -1]) {
+      const dir = new THREE.Vector3(0, 0, side);
+      // nostrils sit high on the muzzle, not down by the jaw
+      const p = surfacePoint(new THREE.Vector3(1.326, 1.553, 0), dir, 0.002);
+      const n = new THREE.Mesh(nostrilGeo, darkMat);
+      n.scale.set(0.036, 0.05, 0.018);
+      // sit just proud of the skin so it reads from any angle
+      n.position.set(p.x - headRest[0], p.y - headRest[1], (p.z + 0.002 * side) - headRest[2]);
+      n.rotation.z = -0.35;
+      headBone.add(n);
+    }
+    // the lip line runs across the front of the muzzle
+    const mouthDir = new THREE.Vector3(-0.788, -0.6157, 0);
+    const mp = surfacePoint(new THREE.Vector3(1.30, 1.47, 0), mouthDir, 0.002);
+    const mouth = new THREE.Mesh(new THREE.CapsuleGeometry(0.013, 0.07, 8, 14), darkMat);
+    mouth.rotation.x = Math.PI / 2;
+    mouth.scale.set(1, 1, 0.7);
+    mouth.position.set(
+      mp.x - headRest[0] + 0.003,
+      mp.y - headRest[1] - 0.002,
+      mp.z - headRest[2],
+    );
+    headBone.add(mouth);
+
     const eyeMat = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color(0x140d09),
       roughness: 0.08,
@@ -131,8 +177,6 @@ export class Horse {
       clearcoatRoughness: 0.03,
     });
     const glintMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const headBone = this.rig.byName.get("head")!;
-    const headRest = this.joints.head;
     for (const side of [1, -1]) {
       const eye = new THREE.Mesh(new THREE.SphereGeometry(0.042, 24, 18), eyeMat);
       eye.position.set(1.097 - headRest[0], 1.849 - headRest[1], 0.084 * side);
