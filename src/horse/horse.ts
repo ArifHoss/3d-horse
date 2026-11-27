@@ -108,8 +108,8 @@ export class Horse {
     // line so it forms strands, turned into a normal perturbation and a
     // little colour break-up.
     const furUniforms = {
-      uFurStrength: { value: 0.15 },
-      uFurDark: { value: 0.035 },
+      uFurStrength: { value: 0.07 },
+      uFurDark: { value: 0.018 },
       uViewRot: { value: new THREE.Matrix3() },
     };
     this.furUniforms = furUniforms;

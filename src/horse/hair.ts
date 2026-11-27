@@ -227,8 +227,8 @@ function anchoredZ(pts: Vec3[], v: number): number {
 export function buildTail(joints: Joints, seed = 2): MeshData {
   const b: RibbonBuilder = { positions: [], indices: [], count: 0 };
   // the dock: the fleshy base, from the croup back and down
-  const dockA: Vec3 = [-0.925, 1.50, 0];
-  const dockB: Vec3 = [-1.075, 1.305, 0];
+  const dockA: Vec3 = [-0.965, 1.495, 0];
+  const dockB: Vec3 = [-1.105, 1.30, 0];
   const strands = 380;
 
   for (let i = 0; i < strands; i++) {
@@ -248,7 +248,7 @@ export function buildTail(joints: Joints, seed = 2): MeshData {
     // a dense core with long outer strands that fall in a curtain
     const core = i < 60;
     const zoff = core ? (h2 - 0.5) * 0.025 : (h2 - 0.5) * 0.065;
-    const back = 0.10 + h3 * 0.16;
+    const back = 0.05 + h3 * 0.1;
     const width = core ? 0.06 + h1 * 0.035 : 0.03 + h1 * 0.03;
     const pts: Vec3[] = [];
     const widths: number[] = [];
@@ -263,7 +263,7 @@ export function buildTail(joints: Joints, seed = 2): MeshData {
         root[2] + zoff * drop * v * 1.05,
       ]);
       // narrow at the dock, widest in the middle, tapering to the ends
-      widths.push(width * (0.35 + 0.85 * Math.sin(Math.PI * Math.min(1, v * 1.1))) * (1 - v * 0.25));
+      widths.push(width * (0.6 + 0.75 * Math.sin(Math.PI * Math.min(1, v * 1.05))) * (1 - v * 0.22));
     }
     addRibbon(b, pts, widths, "z");
     addRibbon(b, pts, widths.map((w) => w * 0.8), "x");

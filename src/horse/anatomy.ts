@@ -259,13 +259,13 @@ function legPrims(side: number, front: boolean): Prim[] {
   }
   return [
     // quarter / thigh mass: the buttock and the stifle in one smooth form
-    ellipsoid([-0.60, 1.15, z], [0.27, 0.31, 0.145], [0, 0, 0.16], 0.28),
+    ellipsoid([-0.60, 1.26, z], [0.25, 0.235, 0.125], [0, 0, 0.16], 0.24),
     // gaskin (tibia)
-    cone(s(-0.62, 1.02), s(-0.795, 0.575), 0.165, 0.06, 0.12),
+    cone(s(-0.63, 1.08), s(-0.795, 0.575), 0.145, 0.058, 0.07),
     // point of hock
     sphere(s(-0.80, 0.555), 0.062, 0.03),
     // the calcaneus, sticking back from the joint
-    ellipsoid([-0.852, 0.60, z], [0.032, 0.042, 0.026], [0, 0, -0.25], 0.02),
+    ellipsoid([-0.856, 0.605, z], [0.036, 0.05, 0.028], [0, 0, -0.3], 0.015),
     ellipsoid([-0.822, 0.60, z], [0.05, 0.055, 0.042], [0, 0, 0.25], 0.03),
     // cannon
     cone(s(-0.802, 0.53), s(-0.786, 0.22), 0.046, 0.038, 0.018),
