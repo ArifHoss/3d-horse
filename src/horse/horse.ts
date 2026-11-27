@@ -67,6 +67,7 @@ export class Horse {
       h: 0.0205,
       smoothIterations: 3,
       projectIterations: 2,
+      aoStrength: 0.62,
       onProgress,
     });
 
@@ -132,8 +133,8 @@ export class Horse {
     const headBone = this.rig.byName.get("head")!;
     const headRest = this.joints.head;
     for (const side of [1, -1]) {
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.047, 24, 18), eyeMat);
-      eye.position.set(1.087 - headRest[0], 1.824 - headRest[1], 0.094 * side);
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.042, 24, 18), eyeMat);
+      eye.position.set(1.097 - headRest[0], 1.849 - headRest[1], 0.084 * side);
       headBone.add(eye);
       const glint = new THREE.Mesh(new THREE.SphereGeometry(0.0085, 10, 8), glintMat);
       glint.position.set(0.026, 0.019, 0.028 * side);

@@ -18,12 +18,22 @@ interface RibbonBuilder {
   count: number;
 }
 
-function addRibbon(b: RibbonBuilder, pts: Vec3[], widths: number[]) {
+/**
+ * One tapered ribbon along `pts`. `axis` picks which way the ribbon's width
+ * runs; hair uses two perpendicular ribbons per strand so it has volume from
+ * every angle instead of vanishing edge-on.
+ */
+function addRibbon(b: RibbonBuilder, pts: Vec3[], widths: number[], axis: "z" | "x" = "z") {
   const base = b.count;
   for (let i = 0; i < pts.length; i++) {
     const w = widths[i];
-    b.positions.push(pts[i][0], pts[i][1], pts[i][2] - w * 0.5);
-    b.positions.push(pts[i][0], pts[i][1], pts[i][2] + w * 0.5);
+    if (axis === "z") {
+      b.positions.push(pts[i][0], pts[i][1], pts[i][2] - w * 0.5);
+      b.positions.push(pts[i][0], pts[i][1], pts[i][2] + w * 0.5);
+    } else {
+      b.positions.push(pts[i][0] - w * 0.5, pts[i][1], pts[i][2]);
+      b.positions.push(pts[i][0] + w * 0.5, pts[i][1], pts[i][2]);
+    }
     b.count += 2;
   }
   for (let i = 0; i < pts.length - 1; i++) {
@@ -89,8 +99,8 @@ function pushOut(sdf: Sdf, p: Vec3, dir: Vec3, clearance = 0.008, maxDist = 0.5)
  * numbers drift off the surface.
  */
 function crestPoint(sdf: Sdf, t: number): Vec3 {
-  const x = 0.30 + t * 0.64;
-  let lo = 1.55 + t * 0.32; // inside the neck
+  const x = 0.31 + t * 0.63;
+  let lo = 1.55 + t * 0.36; // inside the neck
   let hi = lo + 0.35;
   for (let i = 0; i < 20; i++) {
     const mid = (lo + hi) * 0.5;
@@ -113,9 +123,9 @@ export function buildMane(joints: Joints, seed = 1): MeshData {
     const h2 = hash3(i, seed, 2);
     const h3 = hash3(i, seed, 3);
 
-    const length = 0.16 + h2 * 0.17 + Math.sin(u * Math.PI) * 0.08;
-    const width = 0.018 + h1 * 0.02;
-    const layer = h3 > 0.72 ? 0.022 + h1 * 0.012 : 0.002 + h1 * 0.01;
+    const length = 0.13 + h2 * 0.23 + Math.sin(u * Math.PI) * 0.09;
+    const width = 0.010 + h1 * 0.012;
+    const layer = h3 > 0.72 ? 0.02 + h1 * 0.012 : 0.001 + h1 * 0.009;
 
     const pts: Vec3[] = [];
     const widths: number[] = [];
@@ -129,7 +139,7 @@ export function buildMane(joints: Joints, seed = 1): MeshData {
       let out: Vec3;
       if (v < 0.12) {
         // the root sits on the crest itself
-        out = [x, y + 0.012, 0.025 + h1 * 0.02];
+        out = [x, y + 0.008 + h1 * 0.006, 0.012 + h1 * 0.02];
       } else if (v < 0.75) {
         out = pushOut(sdf, [x, y, 0], [0, 0, 1], 0.006 + layer);
       } else {
@@ -138,7 +148,8 @@ export function buildMane(joints: Joints, seed = 1): MeshData {
       pts.push(out);
       widths.push(width * (1 - v * 0.8));
     }
-    addRibbon(b, pts, widths);
+    addRibbon(b, pts, widths, "z");
+    addRibbon(b, pts, widths.map((w) => w * 0.7), "x");
   }
 
   // forelock: falls forward over the forehead, between the ears
@@ -172,35 +183,45 @@ function anchoredZ(pts: Vec3[], v: number): number {
 
 export function buildTail(joints: Joints, seed = 2): MeshData {
   const b: RibbonBuilder = { positions: [], indices: [], count: 0 };
-  const root: Vec3 = [-0.94, 1.435, 0];
-  const strands = 300;
+  // the dock: the fleshy base, from the croup back and down
+  const dockA: Vec3 = [-0.955, 1.485, 0];
+  const dockB: Vec3 = [-1.095, 1.30, 0];
+  const strands = 380;
 
   for (let i = 0; i < strands; i++) {
     const h1 = hash3(i, seed, 11);
     const h2 = hash3(i, seed, 12);
     const h3 = hash3(i, seed, 13);
-    const length = 0.46 + h1 * 0.44;
+    // roots are spread along the dock, so hair leaves the body as a mass
+    const du = 0.08 + h3 * 0.92;
+    const root: Vec3 = [
+      dockA[0] + (dockB[0] - dockA[0]) * du,
+      dockA[1] + (dockB[1] - dockA[1]) * du,
+      0,
+    ];
+    const length = 0.58 + h1 * 0.40 - du * 0.12;
     // a dense core with long outer strands that fall in a curtain
     const core = i < 60;
-    const zoff = core ? (h2 - 0.5) * 0.05 : (h2 - 0.5) * 0.17;
-    const back = 0.26 + h3 * 0.34;
-    const width = core ? 0.045 + h1 * 0.03 : 0.022 + h1 * 0.026;
+    const zoff = core ? (h2 - 0.5) * 0.03 : (h2 - 0.5) * 0.085;
+    const back = 0.10 + h3 * 0.16;
+    const width = core ? 0.06 + h1 * 0.035 : 0.03 + h1 * 0.03;
     const pts: Vec3[] = [];
     const widths: number[] = [];
     const segments = 6;
     for (let s = 0; s <= segments; s++) {
       const v = s / segments;
       // the dock drops close to the body before the hair fans out
-      const drop = v < 0.25 ? v / 0.25 : 1;
+      const drop = v < 0.2 ? v / 0.2 : 1;
       pts.push([
-        root[0] - back * v * (1 - 0.5 * v) - v * v * 0.05 + (core ? 0 : (h1 - 0.5) * 0.05 * v),
-        root[1] - length * v * (0.92 + 0.08 * (1 - v)),
+        root[0] - back * v * (1 - 0.4 * v) - v * v * 0.03 + (h1 - 0.5) * 0.05 * v,
+        root[1] - length * v * (0.93 + 0.07 * (1 - v)),
         root[2] + zoff * drop * v * 1.05,
       ]);
       // narrow at the dock, widest in the middle, tapering to the ends
       widths.push(width * (0.35 + 0.85 * Math.sin(Math.PI * Math.min(1, v * 1.1))) * (1 - v * 0.25));
     }
-    addRibbon(b, pts, widths);
+    addRibbon(b, pts, widths, "z");
+    addRibbon(b, pts, widths.map((w) => w * 0.8), "x");
   }
 
   void joints;

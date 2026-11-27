@@ -77,7 +77,7 @@ export function boneSpecs(j: Joints): BoneSpec[] {
     specs.push({
       name: `scapula${side}`,
       parent: "chest",
-      rest: [0.235, 1.505, front.root[2]],
+      rest: [0.25, 1.53, front.root[2]],
       end: front.root,
       skin: true,
       kind: "leg",

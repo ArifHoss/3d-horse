@@ -25,7 +25,7 @@ export interface Coat {
 export const COATS: Coat[] = [
   {
     id: "bay", name: "Bay",
-    body: "#6f3d1b", points: "#1c1411", mane: "#171010", muzzle: "#2a1e18", hoof: "#241d19",
+    body: "#6a3818", points: "#0f0b09", mane: "#0d0a09", muzzle: "#1a1210", hoof: "#191413",
     socks: [1, 0, 0, 0.55], blaze: 1, star: 0.9,
   },
   {
@@ -62,12 +62,12 @@ export function coatColors(mesh: MeshData, coat: Coat): Float32Array {
 
   // leg centres, for socks
   const legs: Array<[number, number, number, number]> = [
-    [0.49, -0.175, coat.socks[0], 0], // front left
-    [0.49, 0.175, coat.socks[1], 0], // front right
-    [-0.79, -0.165, coat.socks[2], 1], // hind left
-    [-0.79, 0.165, coat.socks[3], 1], // hind right
+    [0.495, -0.15, coat.socks[0], 0], // front left
+    [0.495, 0.15, coat.socks[1], 0], // front right
+    [-0.78, -0.15, coat.socks[2], 1], // hind left
+    [-0.78, 0.15, coat.socks[3], 1], // hind right
   ];
-  const sockTop = [0.29, 0.24, 0.21, 0.25];
+  const sockTop = [0.26, 0.22, 0.19, 0.23];
 
   for (let v = 0; v < mesh.vertexCount; v++) {
     const x = mesh.positions[v * 3];
@@ -90,17 +90,18 @@ export function coatColors(mesh: MeshData, coat: Coat): Float32Array {
     }
 
     // dark points: lower legs, muzzle, ear edges
-    const lowerLeg = smoothstep(0.62, 0.36, y) * (x > 0.15 || x < -0.35 ? 1 : 0);
     let pointMix = 0;
     for (const [lx, lz, , ] of legs) {
       const d = Math.hypot(x - lx, z - lz);
-      pointMix = Math.max(pointMix, smoothstep(0.16, 0.09, d) * smoothstep(0.66, 0.34, y));
+      // black from just below the knee / hock down, with a soft corona
+      const byHeight = smoothstep(0.60, 0.52, y);
+      const byDistance = smoothstep(0.15, 0.10, d);
+      pointMix = Math.max(pointMix, byHeight * byDistance);
     }
-    pointMix = Math.max(pointMix, lowerLeg * 0.35);
     // muzzle
     const muzzleMix = smoothstep(1.16, 1.26, x) * smoothstep(1.72, 1.58, y);
     // ears
-    const earMix = smoothstep(2.02, 2.10, y) * 0.8;
+    const earMix = smoothstep(2.06, 2.14, y) * 0.85;
     pointMix = Math.max(pointMix, earMix);
 
     r = r + (points.r - r) * pointMix;
@@ -130,8 +131,8 @@ export function coatColors(mesh: MeshData, coat: Coat): Float32Array {
 
     // blaze down the face (face axis: from the poll, 52° below horizontal)
     if (coat.blaze > 0) {
-      const fx = x - 0.97;
-      const fy = y - 1.955;
+      const fx = x - 0.98;
+      const fy = y - 1.98;
       const along = fx * 0.6157 + fy * -0.788;
       const across = Math.abs(z);
       const wobble = noise3(x * 26, y * 26, z * 26) * 0.016;
@@ -150,7 +151,7 @@ export function coatColors(mesh: MeshData, coat: Coat): Float32Array {
 
     // star on the forehead
     if (coat.star > 0) {
-      const d = Math.hypot(x - 1.06, y - 1.87, Math.abs(z) * 1.2);
+      const d = Math.hypot(x - 1.07, y - 1.90, Math.abs(z) * 1.2);
       const m = smoothstep(0.055, 0.02, d) * coat.star;
       if (m > 0) {
         r += (white.r - r) * m;

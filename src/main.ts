@@ -88,11 +88,11 @@ scene.add(sun);
 scene.add(sun.target);
 sun.target.position.set(0, 0.9, 0);
 
-const hemi = new THREE.HemisphereLight(0xbcd8ff, 0x3d5227, 0.85);
+const hemi = new THREE.HemisphereLight(0xbcd8ff, 0x3d5227, 1.0);
 scene.add(hemi);
 // a subtle fill from the opposite side keeps the shadow side readable
-const fill = new THREE.DirectionalLight(0xdfe9ff, 0.35);
-fill.position.set(-6, 4, -5);
+const fill = new THREE.DirectionalLight(0xdfe9ff, 0.55);
+fill.position.set(-5.5, 3.2, -4.5);
 scene.add(fill);
 
 const ground = createGround();
@@ -143,7 +143,10 @@ let coatIndex = 0;
 
 const hud = createHud({
   onGait: (g) => setGait(g),
-  onRear: () => horse?.triggerRear(),
+  onRear: () => {
+    horse?.triggerRear();
+    audio.nicker();
+  },
   onXray: () => setXray(!xrayOn),
   onSound: () => void toggleSound(),
   onSpin: () => setSpin(!spinOn),
@@ -174,6 +177,8 @@ function setXray(on: boolean) {
 async function toggleSound() {
   const on = await audio.toggle();
   hud.setSound(on);
+  // immediate feedback that audio is alive
+  if (on) audio.nicker();
 }
 
 function setSpin(on: boolean) {
@@ -239,6 +244,9 @@ if (params.get("rear") === "1") {
 }
   if (params.get("spin") === "1") setSpin(true);
   hud.setGait(horse.gaitName);
+
+  // dev hook: inspect the live scene from the console
+  (window as any).__horse = { horse, audio, scene, camera, renderer, controls, grass };
 
   loading.done();
   renderer.setAnimationLoop(frame);
