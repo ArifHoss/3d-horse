@@ -91,11 +91,12 @@ export class Horse {
 
     const mat = new THREE.MeshPhysicalMaterial({
       vertexColors: true,
-      roughness: 0.78,
+      roughness: 0.66,
       metalness: 0,
-      sheen: 0.35,
-      sheenRoughness: 0.7,
-      sheenColor: new THREE.Color("#e8c9a8"),
+      // coat sheen: the soft, slightly directional highlight horsehair has
+      sheen: 0.42,
+      sheenRoughness: 0.6,
+      sheenColor: new THREE.Color("#e6cfae"),
     });
 
     this.body = new THREE.SkinnedMesh(geo, mat);

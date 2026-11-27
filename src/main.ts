@@ -70,7 +70,7 @@ controls.update();
 const sky = createSky(DAY);
 scene.add(sky);
 
-const sun = new THREE.DirectionalLight(DAY.sun.getHex(), 3.35);
+const sun = new THREE.DirectionalLight(DAY.sun.getHex(), 2.2);
 sun.position.copy(DAY.sunDir).multiplyScalar(9);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
@@ -88,12 +88,17 @@ scene.add(sun);
 scene.add(sun.target);
 sun.target.position.set(0, 0.9, 0);
 
-const hemi = new THREE.HemisphereLight(0xbcd8ff, 0x3d5227, 1.0);
+const hemi = new THREE.HemisphereLight(0xc6dcff, 0x4a6130, 1.85);
 scene.add(hemi);
 // a subtle fill from the opposite side keeps the shadow side readable
-const fill = new THREE.DirectionalLight(0xdfe9ff, 0.55);
-fill.position.set(-5.5, 3.2, -4.5);
+const fill = new THREE.DirectionalLight(0xdfe9ff, 1.3);
+fill.position.set(-6, 3.0, -5);
 scene.add(fill);
+
+// rim light: separates the horse's silhouette from the meadow
+const rim = new THREE.DirectionalLight(0xfff0d0, 0.6);
+rim.position.set(-3.5, 2.4, -6);
+scene.add(rim);
 
 const ground = createGround();
 scene.add(ground);
@@ -328,6 +333,11 @@ function frame() {
   skeleton.update();
   controls.update();
   sky.position.copy(camera.position);
+
+  // a soft fill that follows the camera, so no side of the horse is ever
+  // left as an unreadable dark mass when you orbit round the back
+  fill.position.copy(camera.position).sub(controls.target).normalize().multiplyScalar(6);
+  fill.position.y += 2.5;
 
   // keep the shadow frustum centred on the horse
   sun.position.copy(DAY.sunDir).multiplyScalar(9).add(new THREE.Vector3(0, 0, 0));
