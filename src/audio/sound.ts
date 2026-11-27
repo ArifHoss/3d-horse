@@ -132,6 +132,111 @@ export class StableAudio {
     osc.stop(t + 0.2);
   }
 
+  /**
+   * A whinny: the real horse call. A descending, heavily vibrato'd source
+   * pushed through three sliding formants, with a breath layer and the
+   * characteristic amplitude flutter that makes it read as a horse rather
+   * than a synth tone.
+   */
+  whinny(intensity = 1) {
+    if (!this.ctx || !this.master || !this.noiseBuffer || !this.enabled) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime + 0.02;
+    const dur = 1.15 + Math.random() * 0.25;
+    const out = ctx.createGain();
+    out.gain.value = 0.9 * Math.min(1.4, Math.max(0.4, intensity));
+
+    // ---- source: two detuned saws, falling in pitch ----
+    const f0 = 720 + Math.random() * 90;
+    const f1 = 330 + Math.random() * 60;
+    const oscA = ctx.createOscillator();
+    const oscB = ctx.createOscillator();
+    oscA.type = "sawtooth";
+    oscB.type = "sawtooth";
+    for (const [osc, detune] of [[oscA, 0], [oscB, 12]] as const) {
+      osc.detune.value = detune;
+      osc.frequency.setValueAtTime(f0, t);
+      osc.frequency.exponentialRampToValueAtTime(f0 * 0.82, t + 0.22);
+      osc.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    }
+
+    // deep vibrato — this is most of what makes it sound equine
+    const vib = ctx.createOscillator();
+    vib.frequency.value = 21 + Math.random() * 6;
+    const vibDepth = ctx.createGain();
+    vibDepth.gain.setValueAtTime(30, t);
+    vibDepth.gain.linearRampToValueAtTime(75, t + 0.25);
+    vib.connect(vibDepth);
+    vibDepth.connect(oscA.frequency);
+    vibDepth.connect(oscB.frequency);
+
+    // ---- formants: the vowel of the call ----
+    const formants: Array<[number, number, number]> = [
+      [820, 5.5, 1.0],
+      [1450, 7.0, 0.55],
+      [2650, 9.0, 0.22],
+    ];
+    const voice = ctx.createGain();
+    voice.gain.value = 0.5;
+    for (const [freq, q, gain] of formants) {
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.setValueAtTime(freq * 1.12, t);
+      bp.frequency.linearRampToValueAtTime(freq * 0.86, t + dur);
+      bp.Q.value = q;
+      const g = ctx.createGain();
+      g.gain.value = gain;
+      voice.connect(bp).connect(g).connect(out);
+    }
+    // a little raw source so it is not purely resonant
+    const dry = ctx.createGain();
+    dry.gain.value = 0.06;
+    voice.connect(dry).connect(out);
+    oscA.connect(voice);
+    oscB.connect(voice);
+
+    // ---- breath ----
+    const breath = ctx.createBufferSource();
+    breath.buffer = this.noiseBuffer;
+    breath.playbackRate.value = 0.85;
+    const breathBand = ctx.createBiquadFilter();
+    breathBand.type = "bandpass";
+    breathBand.frequency.setValueAtTime(1900, t);
+    breathBand.frequency.linearRampToValueAtTime(900, t + dur);
+    breathBand.Q.value = 1.2;
+    const breathGain = ctx.createGain();
+    breathGain.gain.value = 0.05;
+    breath.connect(breathBand).connect(breathGain).connect(out);
+    breath.start(t);
+    breath.stop(t + dur + 0.1);
+
+    // ---- amplitude: envelope plus the flutter of the call ----
+    const amp = ctx.createGain();
+    amp.gain.setValueAtTime(0.0001, t);
+    amp.gain.exponentialRampToValueAtTime(0.5, t + 0.07);
+    amp.gain.exponentialRampToValueAtTime(0.22, t + 0.45);
+    amp.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    const flutter = ctx.createOscillator();
+    flutter.frequency.value = 8.5 + Math.random() * 3;
+    const flutterDepth = ctx.createGain();
+    flutterDepth.gain.setValueAtTime(0.08, t);
+    flutterDepth.gain.linearRampToValueAtTime(0.3, t + dur * 0.7);
+    flutterDepth.gain.linearRampToValueAtTime(0, t + dur);
+    flutter.connect(flutterDepth).connect(amp.gain);
+    out.connect(amp);
+    amp.connect(this.master);
+
+    oscA.start(t);
+    oscB.start(t);
+    vib.start(t);
+    flutter.start(t);
+    const stop = t + dur + 0.05;
+    oscA.stop(stop);
+    oscB.stop(stop);
+    vib.stop(stop);
+    flutter.stop(stop);
+  }
+
   /** A nicker: a low, wobbling vowel-ish tone. */
   nicker() {
     if (!this.ctx || !this.master || !this.enabled) return;

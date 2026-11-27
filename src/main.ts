@@ -145,7 +145,7 @@ const hud = createHud({
   onGait: (g) => setGait(g),
   onRear: () => {
     horse?.triggerRear();
-    audio.nicker();
+    void ensureSound().then(() => audio.whinny());
   },
   onXray: () => setXray(!xrayOn),
   onSound: () => void toggleSound(),
@@ -174,11 +174,21 @@ function setXray(on: boolean) {
   skeleton.setVisible(on);
 }
 
+/** Turn sound on if it is off, so a call is always audible. */
+async function ensureSound() {
+  if (audio.enabled) return;
+  const on = await audio.toggle();
+  hud.setSound(on);
+}
+
 async function toggleSound() {
   const on = await audio.toggle();
   hud.setSound(on);
   // immediate feedback that audio is alive
-  if (on) audio.nicker();
+  if (on) {
+    audio.nicker();
+    window.setTimeout(() => audio.whinny(0.8), 420);
+  }
 }
 
 function setSpin(on: boolean) {
@@ -201,6 +211,7 @@ addEventListener("keydown", (e) => {
   if (e.code === "Space") {
     e.preventDefault();
     horse?.triggerRear();
+    void ensureSound().then(() => audio.whinny());
   }
   if (e.key === "x" || e.key === "X") setXray(!xrayOn);
   if (e.key === "c" || e.key === "C") setCoat((coatIndex + 1) % COATS.length);
@@ -210,7 +221,20 @@ addEventListener("keydown", (e) => {
 });
 
 // double click the horse rears up
-renderer.domElement.addEventListener("dblclick", () => horse?.triggerRear());
+renderer.domElement.addEventListener("dblclick", () => {
+  horse?.triggerRear();
+  void ensureSound().then(() => audio.whinny());
+});
+
+// a plain click (not an orbit drag) gets you a whinny
+let downAt: [number, number] = [0, 0];
+renderer.domElement.addEventListener("pointerdown", (e) => {
+  downAt = [e.clientX, e.clientY];
+});
+renderer.domElement.addEventListener("pointerup", (e) => {
+  const moved = Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]);
+  if (moved < 6) void ensureSound().then(() => audio.whinny());
+});
 
 /* ------------------------------------------------------------------ *
  * Boot
