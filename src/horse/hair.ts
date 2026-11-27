@@ -227,8 +227,8 @@ function anchoredZ(pts: Vec3[], v: number): number {
 export function buildTail(joints: Joints, seed = 2): MeshData {
   const b: RibbonBuilder = { positions: [], indices: [], count: 0 };
   // the dock: the fleshy base, from the croup back and down
-  const dockA: Vec3 = [-0.955, 1.485, 0];
-  const dockB: Vec3 = [-1.095, 1.30, 0];
+  const dockA: Vec3 = [-0.925, 1.50, 0];
+  const dockB: Vec3 = [-1.075, 1.305, 0];
   const strands = 380;
 
   for (let i = 0; i < strands; i++) {
@@ -237,9 +237,11 @@ export function buildTail(joints: Joints, seed = 2): MeshData {
     const h3 = hash3(i, seed, 13);
     // roots are spread along the dock, so hair leaves the body as a mass
     const du = 0.08 + h3 * 0.92;
+    // start each strand a little inside the body: the rump hides the root,
+    // so the tail grows out of the croup instead of being cut off on it
     const root: Vec3 = [
-      dockA[0] + (dockB[0] - dockA[0]) * du,
-      dockA[1] + (dockB[1] - dockA[1]) * du,
+      dockA[0] + (dockB[0] - dockA[0]) * du + 0.02,
+      dockA[1] + (dockB[1] - dockA[1]) * du + (h2 - 0.5) * 0.015,
       0,
     ];
     const length = 0.58 + h1 * 0.40 - du * 0.12;

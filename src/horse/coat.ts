@@ -25,27 +25,27 @@ export interface Coat {
 export const COATS: Coat[] = [
   {
     id: "bay", name: "Bay",
-    body: "#6a3818", points: "#0f0b09", mane: "#0d0a09", muzzle: "#1a1210", hoof: "#191413",
+    body: "#8a4a1e", points: "#161010", mane: "#100c0a", muzzle: "#1d1411", hoof: "#1a1514",
     socks: [1, 0, 0, 0.55], blaze: 1, star: 0.9,
   },
   {
     id: "chestnut", name: "Chestnut",
-    body: "#8c4a24", points: "#7f4420", mane: "#b3603a", muzzle: "#6b3a1c", hoof: "#2b2420",
+    body: "#a2552a", points: "#8e4a22", mane: "#c06a3e", muzzle: "#77401d", hoof: "#2f2723",
     socks: [1, 0.7, 0, 0], blaze: 1, star: 0.4,
   },
   {
     id: "black", name: "Black",
-    body: "#221b18", points: "#181312", mane: "#121010", muzzle: "#201a17", hoof: "#1c1917",
+    body: "#2a2220", points: "#1c1614", mane: "#141110", muzzle: "#241d19", hoof: "#1e1a18",
     socks: [0, 0, 1, 0], blaze: 0.6, star: 0.5,
   },
   {
     id: "grey", name: "Dapple grey",
-    body: "#9d9a95", points: "#7e7b76", mane: "#cfcbc4", muzzle: "#6b6862", hoof: "#33302c",
+    body: "#a8a49d", points: "#87837d", mane: "#d5d1c9", muzzle: "#726e68", hoof: "#36332f",
     socks: [0.5, 0.8, 0.5, 0.6], blaze: 0.8, star: 0.6,
   },
   {
     id: "buckskin", name: "Buckskin",
-    body: "#a5763f", points: "#241a14", mane: "#1a1210", muzzle: "#2c211a", hoof: "#2a231e",
+    body: "#b4834a", points: "#281d16", mane: "#1c1411", muzzle: "#30241c", hoof: "#2d2620",
     socks: [0, 0, 0, 0], blaze: 0, star: 0.5,
   },
 ];

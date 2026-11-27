@@ -193,7 +193,11 @@ function headPrims(): Prim[] {
   // the jaw's lower edge, from the throat forward to the chin
   const jawEdgeA = facePoint(0.12, -0.138);
   const jawEdgeB = facePoint(0.53, -0.044);
-  out.push(cone([jawEdgeA[0], jawEdgeA[1], 0], [jawEdgeB[0], jawEdgeB[1], 0], 0.048, 0.032, 0.05));
+  out.push(cone([jawEdgeA[0], jawEdgeA[1], 0], [jawEdgeB[0], jawEdgeB[1], 0], 0.046, 0.03, 0.03));
+  // the cheekbone runs from under the eye back to the jaw hinge
+  const cheekA = facePoint(0.235, -0.062);
+  const cheekB = facePoint(0.10, -0.105);
+  out.push(cone([cheekA[0], cheekA[1], 0], [cheekB[0], cheekB[1], 0], 0.026, 0.022, 0.022));
   // lower jaw line
   const jawA = facePoint(0.085, -0.137);
   const jawB = facePoint(0.585, -0.046);
@@ -260,6 +264,8 @@ function legPrims(side: number, front: boolean): Prim[] {
     cone(s(-0.62, 1.02), s(-0.795, 0.575), 0.165, 0.06, 0.12),
     // point of hock
     sphere(s(-0.80, 0.555), 0.062, 0.03),
+    // the calcaneus, sticking back from the joint
+    ellipsoid([-0.852, 0.60, z], [0.032, 0.042, 0.026], [0, 0, -0.25], 0.02),
     ellipsoid([-0.822, 0.60, z], [0.05, 0.055, 0.042], [0, 0, 0.25], 0.03),
     // cannon
     cone(s(-0.802, 0.53), s(-0.786, 0.22), 0.046, 0.038, 0.018),

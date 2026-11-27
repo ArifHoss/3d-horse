@@ -108,8 +108,8 @@ export class Horse {
     // line so it forms strands, turned into a normal perturbation and a
     // little colour break-up.
     const furUniforms = {
-      uFurStrength: { value: 0.36 },
-      uFurDark: { value: 0.1 },
+      uFurStrength: { value: 0.15 },
+      uFurDark: { value: 0.035 },
       uViewRot: { value: new THREE.Matrix3() },
     };
     this.furUniforms = furUniforms;
@@ -155,7 +155,7 @@ export class Horse {
            // hair runs down the body: stretch the field hard in Y so the
            // noise reads as strands, and let a slow mask break it into clumps
            float furField(vec3 p) {
-             vec3 q = p * vec3(64.0, 18.0, 64.0);
+             vec3 q = p * vec3(96.0, 26.0, 96.0);
              float strands = furNoise(q) * 0.62 + furNoise(q * 2.6) * 0.28
                            + furNoise(q * 6.3) * 0.1;
              float clump = furNoise(p * vec3(9.0, 3.0, 9.0));
